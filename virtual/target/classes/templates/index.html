@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employees</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+<div class="container">
+    <h1>Employees</h1>
+    <p class="my-5">
+       <button class="btn btn-primary" onclick="createEmployee()">Add Employee</button>
+    </p>
+    <table id="employeesTable" class="table table-striped table-bordered">
+        <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>age</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Update</th>
+            <th>Delete</th>
+        </tr>
+        </thead>
+        <tbody id="employeesBody">
+
+        </tbody>
+    </table>
+</div>
+<!-- Modal -->
+<div class="modal" tabindex="-1" id="updateModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Update Employee</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- Form to update employee details -->
+                <div id="error_message"></div>
+<!--                <form id="updateForm">-->
+                    <!-- Employee details inputs (name, age, email) -->
+                    <input hidden id="user_id">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="name" name="name">
+                    </div>
+                    <div class="mb-3">
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" class="form-control" id="age" name="age">
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email">
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Role</label>
+                        <input type="text" class="form-control" id="role" name="role">
+                    </div>
+                    <button  class="btn btn-primary" onclick=submitModalData()>Update</button>
+<!--                </form>-->
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function validate(data){
+       const name = data.name;
+       const age = parseInt(data.age);
+       const role = data.role;
+       const email = data.email;
+       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+       const messages = [];
+       if(name.length<2){
+           const message = "name should content atleast 2 character";
+           messages.push(message);
+       }
+       else if(age<18 || age>99){
+          if(age<18){
+            const message = "age must be atleast 18 years";
+            messages.push(message);
+          }
+          if(age>99){
+            const message = "age must be less then 100 years";
+            messages.push(message);
+          }
+       }else if(!emailRegex.test(email) || email.length<4){
+           const message = "Please Enter Valid Email";
+           messages.push(message);
+       }
+       else if(role.length<2){
+           const message = "role should content atleast 2 character";
+           messages.push(message);
+       }
+
+        if(messages.length>0){
+            const content = `<div class="alert alert-warning" role="alert">
+                 ${messages[0]}
+            </div>`;
+            document.getElementById('error_message').innerHTML = content;
+            return false;
+        }
+        return true;
+    }
+    function createEmployee(){
+        var modal = document.getElementById('updateModal');
+        var modalBS = new bootstrap.Modal(modal);
+        document.getElementById('user_id').value = -1;
+        modalBS.show();
+    }
+    function UpdateButton(id){
+       console.log(`update button pressed ${id}`);
+        const row = document.getElementById(`employee-${id}`);
+        const name = row.querySelector('td:nth-child(2)').textContent
+        const age = row.querySelector('td:nth-child(3)').textContent
+        const email = row.querySelector('td:nth-child(4)').textContent
+        const role = row.querySelector('td:nth-child(5)').textContent
+        document.getElementById('name').value = name;
+        document.getElementById('age').value = age;
+        document.getElementById('email').value = email;
+        document.getElementById('role').value = role;
+        document.getElementById('user_id').value = id;
+        var modal = document.getElementById('updateModal');
+        var modalBS = new bootstrap.Modal(modal);
+        modalBS.show();
+    }
+    function submitModalData() {
+        const id = document.getElementById('user_id').value;
+        const data = {
+            "name": document.getElementById('name').value,
+            "age": parseInt(document.getElementById('age').value),
+            "email": document.getElementById('email').value,
+            "role": document.getElementById('role').value
+        };
+        if(!validate(data)) return false;
+        document.getElementById('error_message').innerHTML = '';
+        var modalElement = document.getElementById('updateModal');
+        var modalInstance = bootstrap.Modal.getInstance(modalElement);
+        modalInstance.hide();
+        if(id===-1){
+           fetch(`/employee`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update employee');
+                }
+                console.log('Employee updated successfully');
+                // You might want to handle further actions here, like closing the modal or refreshing the employee list
+                console.log("Save data successfully");
+            })
+            .catch(error => {
+                console.error('Error updating employee:', error);
+            });
+        }else{
+           fetch(`/employee/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to update employee');
+                }
+                console.log('Employee updated successfully');
+                // You might want to handle further actions here, like closing the modal or refreshing the employee list
+                console.log("Save data successfully");
+            })
+            .catch(error => {
+                console.error('Error updating employee:', error);
+            });
+        }
+    }
+    function DeleteButton(id) {
+        console.log(`delete button pressed ${id}`);
+        fetch(`/employee/${id}`, {
+            method: 'DELETE'
+        })
+        .then(response => {
+            console.log(response);
+            if (!response.ok) {
+                throw new Error('Failed to delete employee');
+            }
+            console.log('Employee deleted successfully');
+        })
+        .catch(error => {
+            console.error('Error deleting employee:', error);
+        });
+
+    }
+
+    fetch('/employee')
+        .then(response => response.json())
+        .then(data => {
+            const employeesBody = document.getElementById('employeesBody');
+            data.forEach((employee, index) => {
+                const row = `
+                    <tr id="employee-${employee.id}">
+                        <td>${index+1}</td>
+                        <td>${employee.name}</td>
+                        <td>${employee.age}</td>
+                        <td>${employee.email}</td>
+                        <td>${employee.role}</td>
+                        <td><button type="button" class="btn btn-success" onclick="UpdateButton(${employee.id})">Update</button></td>
+                        <td><button type="button" class="btn btn-danger" onclick="DeleteButton(${employee.id})">Delete</button></td>
+                    </tr>
+                `;
+                employeesBody.innerHTML += row;
+            });
+        })
+        .catch(error => console.error('Error fetching employees:', error));
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
